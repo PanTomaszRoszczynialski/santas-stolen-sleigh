@@ -8,6 +8,11 @@ north_pole = (90,0)
 sleigh_mass = 10.0
 total_wrw = 0
 
+def distance(destination, origin = north_pole):
+    """ Calculates distance from the north pole if
+        one argument is provided """
+    return haversine(origin, destination)
+
 def read_data(ListFile):
     GiftList = []
     f = open(ListFile, 'rb')
@@ -46,7 +51,7 @@ def init_trips(GiftList):
         GiftList[it].append(0)
     return Trips
 
-def trip_wrw(trip, Trips, GiftList, distance=haversine):
+def trip_wrw(trip, Trips, GiftList):
   #  print trip
     route = Trips[trip]
     if len(route) is 0:
@@ -55,25 +60,27 @@ def trip_wrw(trip, Trips, GiftList, distance=haversine):
     places = [(GiftList[x][0], GiftList[x][1]) for x in route]
     weights = [GiftList[x][2] for x in Trips[trip]]
     total_mass = sum(weights)+sleigh_mass
-    tot = total_mass * distance(north_pole, places[0])
+
+    tot = total_mass * distance(places[0])
     for it in range(len(places)-1):
         total_mass -= weights[it]
         tot += total_mass * distance(places[it], places[it+1])
 
-    tot += sleigh_mass * haversine(places[len(places)-1], north_pole)
+    # Get back to the pole, bitch
+    tot += sleigh_mass * distance(places[len(places)-1])
     return tot
 
-def initalize_wrws(Trips, GiftList, distance):
+def initalize_wrws(Trips, GiftList):
     wrws = []
     for it in range(len(Trips)):
-        wrws.append(trip_wrw(it, Trips, GiftList, distance))
+        wrws.append(trip_wrw(it, Trips, GiftList))
 
     return wrws
 
-def total_WRW(Trips, GiftList, distance=haversine):
+def total_WRW(Trips, GiftList):
     s = 0
     for it in range(len(Trips)):
-        s += trip_wrw(it, Trips, GiftList,distance)
+        s += trip_wrw(it, Trips, GiftList)
     return s
 
 def merge_trips(trip1, trip2, Trips):
@@ -90,16 +97,19 @@ def update_after_merge(trip1, trip2, GiftList):
         GiftList[it][4]=s
         s+=1
 
-def check_if_merge(trip1, trip2, Trips, GiftList, distance=haversine):
-    l=list([list(Trips[trip1]),list(Trips[trip2])])
+def check_if_merge(trip1, trip2, Trips, GiftList):
+    """ This function seems to be important """
+    l = list([list(Trips[trip1]), list(Trips[trip2])])
     l_c = list(l)
-    Ei = trip_wrw(0,l,GiftList,distance)+trip_wrw(1,l,GiftList,distance)
+    Ei = trip_wrw(0, l, GiftList) +\
+         trip_wrw(1, l, GiftList)
     #print l
-    merge_trips(0,1,l)
+    merge_trips(0, 1, l)
+    # XXX Karny kutas za jezykowy promiskuityzm
     #print 'Jestem w checku',l
-    Ef = trip_wrw(0,l,GiftList,distance)
+    Ef = trip_wrw(0, l, GiftList)
 
-    return Ef-Ei
+    return Ef - Ei
 
 def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
     route = Trips[trip]
