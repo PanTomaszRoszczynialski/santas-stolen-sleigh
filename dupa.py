@@ -6,24 +6,30 @@ import random
 
 north_pole = (90,0)
 sleigh_mass = 10.0
-total_wrw=0
+total_wrw = 0
 
 def read_data(ListFile):
-    f=open(ListFile,'rb')
+    GiftList = []
+    f = open(ListFile, 'rb')
     reader = csv.reader(f)
-    GiftList = list()
-    for raw in list(reader)[1:]:
-        GiftList.append(map(float,raw[1:]))
-    return GiftList    
-    
+
+    # Skip csv header
+    reader.next()
+
+    for row in reader:
+        # Keep gift coordinates and ommit gift-id from the csv file
+        gift = [float(val) for val in row[1:]]
+        GiftList.append(gift)
+
+    return GiftList
+
 def write_solution(GiftList, Trips, file_name):
-    with open(file_name,'w') as f :
-        wrt = csv.writer(f,delimiter=',')
-        wrt.writerow(['GiftId','TripId'])
-        for tr in range(len(Trips)):
-            for g in Trips[tr] : 
-                wrt.writerow([str(g),str(tr)])
-    
+    with open(file_name, 'w') as f :
+        wrt = csv.writer(f, delimiter=',')
+        wrt.writerow(['GiftId', 'TripId'])
+        for trip in range(len(Trips)):
+            for gift in Trips[trip] :
+                wrt.writerow([str(gift), str(trip)])
 
 def euclid_dist(x, y):
     """ Unused """
@@ -31,7 +37,7 @@ def euclid_dist(x, y):
 
 def boltzmann_distribution(dif, T):
     return np.exp(-dif/T)
-    
+
 def init_trips(GiftList):
     Trips = []
     for it in range(len(GiftList)):
@@ -40,52 +46,50 @@ def init_trips(GiftList):
         GiftList[it].append(0)
     return Trips
 
-
 def trip_wrw(trip, Trips, GiftList, distance=haversine):
   #  print trip
     route = Trips[trip]
-    if len(route)==0 :
+    if len(route) is 0:
         return 0
-    places = [(GiftList[x][0],GiftList[x][1]) for x in route]
+
+    places = [(GiftList[x][0], GiftList[x][1]) for x in route]
     weights = [GiftList[x][2] for x in Trips[trip]]
     total_mass = sum(weights)+sleigh_mass
-    tot=total_mass*distance(north_pole,places[0])
+    tot = total_mass * distance(north_pole, places[0])
     for it in range(len(places)-1):
-        total_mass-=weights[it]
-        tot+=total_mass*distance(places[it],places[it+1])
-    
-    tot+=sleigh_mass*haversine(places[len(places)-1],north_pole)
+        total_mass -= weights[it]
+        tot += total_mass * distance(places[it], places[it+1])
+
+    tot += sleigh_mass * haversine(places[len(places)-1], north_pole)
     return tot
-    
+
 def initalize_wrws(Trips, GiftList, distance):
     wrws = []
     for it in range(len(Trips)):
-        
-        wrws.append(trip_wrw(it,Trips,GiftList,distance))
+        wrws.append(trip_wrw(it, Trips, GiftList, distance))
+
     return wrws
-    
+
 def total_WRW(Trips, GiftList, distance=haversine):
-    s=0
+    s = 0
     for it in range(len(Trips)):
-        s+=trip_wrw(it, Trips, GiftList,distance)
+        s += trip_wrw(it, Trips, GiftList,distance)
     return s
-    
-        
+
 def merge_trips(trip1, trip2, Trips):
     Trips[trip1]+=Trips[trip2]
     Trips[trip2]=list()
-        
+
 def update_after_merge(trip1, trip2, GiftList):
     if trip1==trip2:
         raise Exception(0)
     s=len(Trips[trip1])
-    
+
     for it in Trips[trip2]:
         GiftList[it][3]=trip1
         GiftList[it][4]=s
         s+=1
-           
-        
+
 def check_if_merge(trip1, trip2, Trips, GiftList, distance=haversine):
     l=list([list(Trips[trip1]),list(Trips[trip2])])
     l_c = list(l)
@@ -94,9 +98,9 @@ def check_if_merge(trip1, trip2, Trips, GiftList, distance=haversine):
     merge_trips(0,1,l)
     #print 'Jestem w checku',l
     Ef = trip_wrw(0,l,GiftList,distance)
-    
+
     return Ef-Ei
-    
+
 def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
     route = Trips[trip]
     #if trip!=GiftList[new_route[0]][3]:
@@ -108,16 +112,15 @@ def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
 def update_after_permutation(new_route, GiftList, Trips):
     """ Unused """
     pass
-    
+
 def check_if_permute(new_route, GiftList, trip, Trips):
     """ Unused """
     l=[list(Trips[trip])]
     E_i = trip_wrw(trip,Trips,GiftList)
     permute_gifts_in_trip(new_route,GiftList,0,l)
     E_f = trip_wrw(0,l,GiftList)
-    
+
     return E_f-E_i
-        
 
 def avarage_difference(GiftList, Trips, samples):
     s_plus=0
@@ -146,7 +149,7 @@ def avarage_difference(GiftList, Trips, samples):
 
 def optimize1(T_start, iterations,
               GiftList, Trips,
-              prob=boltzmann_distribution):
+              prob = boltzmann_distribution):
     t_plus  = 0
     t_minus = 0
     wrw = total_WRW(Trips, GiftList)
@@ -169,7 +172,7 @@ def optimize1(T_start, iterations,
         trip1, trip2 = gift1[3], gift2[3]
         if trip1 == trip2:
             continue
- 
+
         #print 'Trips',trip1,trip2,'chosen.'
         dif = check_if_merge(trip1,trip2,Trips,GiftList)
         #print  'Their difference: ',dif
@@ -180,7 +183,6 @@ def optimize1(T_start, iterations,
                 merge_trips(trip1, trip2, Trips)
                 wrw += dif
                 t_minus += dif
-                
                 #print Trips
 
         else :
@@ -196,20 +198,26 @@ def optimize1(T_start, iterations,
                     #print Trip
     return wrw
 
-GiftList = read_data('data/gifts.csv')[1:10000]
-Trips = init_trips(GiftList)
-#r = avarage_difference(GiftList,Trips,10000)
+if __name__ == "__main__":
 
-before = total_WRW(Trips,GiftList)
+    GiftList = read_data('data/gifts.csv')[1:10000]
+    Trips = init_trips(GiftList)
+    #r = avarage_difference(GiftList,Trips,10000)
 
-opt = optimize1(15000.0,100000,GiftList,Trips)
-print 'Initial WRW', before
-print 'After optimization', opt
-s=0
-n=0
-for it in Trips:
-    s+=len(it)
-    if len(it)!=0:
-        n+=1
-print 'Avarage trip length:',float(s)/float(n)
-write_solution(GiftList,Trips,'local_solution.csv')
+    before = total_WRW(Trips, GiftList)
+
+    opt = optimize1(15000.0,100000,GiftList,Trips)
+    print 'Initial WRW', before
+    print 'After optimization', opt
+
+    s = 0
+    n = 0
+
+    for it in Trips:
+        s += len(it)
+        if len(it) is not 0:
+            n += 1
+
+    print 'Avarage trip length:', float(s)/float(n)
+
+    write_solution(GiftList, Trips, 'local_solution.csv')
