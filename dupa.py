@@ -6,7 +6,6 @@ import random
 
 north_pole = (90,0)
 sleigh_mass = 10.0
-total_wrw = 0
 
 def distance(destination, origin = north_pole):
     """ Calculates distance from the north pole if
@@ -61,7 +60,7 @@ def trip_wrw(trip, GiftList):
 
     places = [(GiftList[x][0], GiftList[x][1]) for x in trip]
     weights = [GiftList[x][2] for x in trip]
-    total_mass = sum(weights)+sleigh_mass
+    total_mass = sum(weights) + sleigh_mass
 
     tot = total_mass * distance(places[0])
     for it in range(len(places)-1):
@@ -93,7 +92,9 @@ def merge_trips(trip1, trip2, Trips):
     Trips[trip2] = list()
 
 def update_after_merge(trip1, trip2, GiftList):
+    """ no idea what's going on in here """
     if trip1 == trip2:
+        print 'wtf, this doesn\'t happen'
         raise Exception(0)
 
     s = len(Trips[trip1])
@@ -105,16 +106,21 @@ def update_after_merge(trip1, trip2, GiftList):
 
 def check_if_merge(trip1, trip2, Trips, GiftList):
     """ This function seems to be important """
-    # worst line ever
-    l = list([list(Trips[trip1]), list(Trips[trip2])])
+    # Some serious resource managament issue is 
+    # clearly visible here, there is no pretty
+    # way to make sure we get copies from Trips
+    # and not references ???
+    # l = [Trips[trip1][:], Trips[trip2][:]]
+    local_trips = [list(Trips[trip1]), list(Trips[trip2])]
 
-    Ei = trip_wrw(l[0], GiftList) +\
-         trip_wrw(l[1], GiftList)
-    #print l
-    merge_trips(0, 1, l)
+    Ei = trip_wrw(local_trips[0], GiftList) +\
+         trip_wrw(local_trips[1], GiftList)
+
+    # no kurwa
+    merge_trips(0, 1, local_trips)
     # XXX Karny kutas za jezykowy promiskuityzm
     #print 'Jestem w checku',l
-    Ef = trip_wrw(l[0], GiftList)
+    Ef = trip_wrw(local_trips[0], GiftList)
 
     return Ef - Ei
 
@@ -204,6 +210,7 @@ def optimize1(T_start, iterations,
             print debug_str.format(T, it, wrw)
             return scores
 
+        # Take 2 random gifts
         id1 = random.randrange(0, N)
         id2 = random.randrange(0, N)
         gift1 = GiftList[id1]
@@ -213,9 +220,10 @@ def optimize1(T_start, iterations,
         if trip1 == trip2:
             continue
 
-        #print 'Trips',trip1,trip2,'chosen.'
+        # Check if it is beneficial to take the second gift
+        # on the trip carrying the first one ???
         dif = check_if_merge(trip1, trip2, Trips, GiftList)
-        #print  'Their difference: ',dif
+
         if dif < 0:
             if len(Trips[trip1]) + len(Trips[trip2]) >= 0.0:
                 #print 'negative, merging'
@@ -244,7 +252,7 @@ def optimize1(T_start, iterations,
 
 if __name__ == "__main__":
 
-    GiftList = read_data('data/gifts.csv')[1:10000]
+    GiftList = read_data('data/gifts.csv')[0:1000]
     Trips = init_trips(GiftList)
     #r = avarage_difference(GiftList,Trips,10000)
 
