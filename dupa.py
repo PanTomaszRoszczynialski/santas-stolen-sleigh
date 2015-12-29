@@ -23,7 +23,12 @@ def write_solution(GiftList, Trips, file_name):
         for tr in range(len(Trips)):
             for g in Trips[tr] : 
                 wrt.writerow([str(g),str(tr)])
-    
+
+
+def silnia(n):
+    if n==0 :
+        return 0
+    else return n*silnia(n-1)
 
 def euclid_dist(x, y):
     """ Unused """
