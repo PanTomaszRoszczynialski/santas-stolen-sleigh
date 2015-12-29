@@ -52,6 +52,15 @@ def init_trips(GiftList):
         GiftList[it].append(0)
 
     return Trips
+    
+#List of total trip masses can be useful in future     
+    
+def init_masses(Trips):
+    Masses=[]
+    for it in range(len(Trips)):
+        Masses.append(GiftList[it][2])
+    
+    return Masses
 
 def trip_wrw(trip, GiftList):
     """ trip is a list of gifts to be delivered in one session """
@@ -91,7 +100,7 @@ def merge_trips(trip1, trip2, Trips):
     Trips[trip1] += Trips[trip2]
     Trips[trip2] = list()
 
-def update_after_merge(trip1, trip2, GiftList):
+def update_after_merge(trip1, trip2, GiftList,Masses):
     """ no idea what's going on in here """
     if trip1 == trip2:
         print 'wtf, this doesn\'t happen'
@@ -103,6 +112,9 @@ def update_after_merge(trip1, trip2, GiftList):
         GiftList[it][3] = trip1
         GiftList[it][4] = s
         s += 1
+    
+    Masses[trip1] += Masses[trip2]
+    Masses[trip2] = 0
 
 def check_if_merge(trip1, trip2, Trips, GiftList):
     """ This function seems to be important """
@@ -177,7 +189,7 @@ def avarage_difference(GiftList, Trips, samples):
     return result
 
 def optimize1(T_start, iterations,
-              GiftList, Trips,
+              GiftList, Trips, Masses,
               prob = boltzmann_distribution):
 
     # What are those t_ for?
@@ -186,6 +198,11 @@ def optimize1(T_start, iterations,
 
     wrw = total_WRW(Trips, GiftList)
     epsilon = (T_start + 100.0)/float(iterations)
+    #przepraszam za jezykowy "promiskuityzm" ale do JASNEJ KURWY czemu 
+    #temperatura dochodzi ponizej zera przy takiej  inicjalizacji??????
+    #Nie ogarniam    
+    
+    
     T = T_start + epsilon
     N = len(GiftList)
 
@@ -223,11 +240,13 @@ def optimize1(T_start, iterations,
         # Check if it is beneficial to take the second gift
         # on the trip carrying the first one ???
         dif = check_if_merge(trip1, trip2, Trips, GiftList)
+        
+        
 
         if dif < 0:
-            if len(Trips[trip1]) + len(Trips[trip2]) >= 0.0:
+            if Masses[trip1] + Masses[trip2] <= 1000:
                 #print 'negative, merging'
-                update_after_merge(trip1, trip2, GiftList)
+                update_after_merge(trip1, trip2, GiftList,Masses)
                 merge_trips(trip1, trip2, Trips)
                 wrw += dif
                 t_minus += dif
@@ -236,9 +255,9 @@ def optimize1(T_start, iterations,
             r = random.random()
             #print 'Boltzmann:', prob(dif,T),'random number:', r
             if prob(dif, T) > r:
-                if len(Trips[trip1]) + len(Trips[trip2]) >= 0.0:
+                if Masses[trip1] + Masses[trip2] >= 0.0:
                     #print 'merging'
-                    update_after_merge(trip1, trip2, GiftList)
+                    update_after_merge(trip1, trip2, GiftList,Masses)
                     merge_trips(trip1, trip2, Trips)
                     wrw += dif
                     t_plus += dif
@@ -254,12 +273,13 @@ if __name__ == "__main__":
 
     GiftList = read_data('data/gifts.csv')[0:1000]
     Trips = init_trips(GiftList)
+    Masses=init_masses(Trips)
     #r = avarage_difference(GiftList,Trips,10000)
 
     before = total_WRW(Trips, GiftList)
 
     iterations = int(1e5)
-    results = optimize1(15000.0, iterations, GiftList, Trips)
+    results = optimize1(15000.0, iterations, GiftList, Trips,Masses)
     after = results[-1]
 
     print 'Initial WRW', before
