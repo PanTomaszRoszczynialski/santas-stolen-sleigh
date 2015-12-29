@@ -54,6 +54,28 @@ def init_trips(GiftList):
     return Trips
     
 #List of total trip masses can be useful in future     
+def init_trips1(GiftList):
+    N=len(GiftList)
+    l = list(np.random.permutation(N))
+    result = []
+    trip=0
+    mass = 0
+    result.append([])
+    for it in l:
+        #print mass, result
+        mass += GiftList[it][2]
+        if mass <=1000 :
+            result[trip].append(it)
+            GiftList[it].append(trip)
+        else :
+            trip += 1
+            mass = 0
+            result.append([])
+            result[trip].append(it)
+            GiftList[it].append(trip)
+        
+    
+    return result
     
 def init_masses(Trips):
     Masses=[]
@@ -135,6 +157,27 @@ def check_if_merge(trip1, trip2, Trips, GiftList):
     Ef = trip_wrw(local_trips[0], GiftList)
 
     return Ef - Ei
+    
+    
+def split_trips(trip,Trips,place):
+    #place = GiftList[gift][4]
+    Trips.append(Trips[trip][place:])
+    Trips[trip] = Trips[trip][:place]
+
+def check_if_split(trip, Trips, place, GiftList) :
+    E_i = trip_wrw(Trips[trip],GiftList)
+    
+    E_f = trip_wrw(Trips[trip][:place],GiftList) +trip_wrw(Trips[trip][place:],GiftList) 
+          
+    
+    return E_f-E_i
+    
+def update_after_split(trip,Trips,place,GiftList):
+    for it in Trips[trip][place:]:
+        GiftList[it][3] = len(Trips)
+        Masses[trip] = sum([GiftList[x][3] for x in Trips[trip][:place]])
+        Masses.append(sum([GiftList[x][3] for x in Trips[trip][place:]]))
+
 
 def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
     """ Used only in unused function """
@@ -271,16 +314,93 @@ def optimize1(T_start, iterations,
 
     return scores
 
+def optimize2(T_start, iterations,
+              GiftList, Trips, Masses,
+              prob = boltzmann_distribution):
+
+    # What are those t_ for?
+    t_plus  = 0
+    t_minus = 0
+
+    wrw = total_WRW(Trips, GiftList)
+    epsilon = (T_start + 100.0)/float(iterations)
+    #przepraszam za jezykowy "promiskuityzm" ale do JASNEJ KURWY czemu 
+    #temperatura dochodzi ponizej zera przy takiej  inicjalizacji??????
+    #Nie ogarniam    
+    
+    
+    T = T_start + epsilon
+    N = len(GiftList)
+    N_T = len(Trips)
+
+    # Keep track of improvements for diagnostics
+    scores = []
+
+    for it in range(iterations):
+        # Take temperature step
+        T -= epsilon
+
+        # Save current score
+        scores.append(wrw)
+
+        # Print debug information every 1000 steps
+        if it%1000 is 0:
+            debug_str = 'T: {0}, Iteration: {1}, Score: {2}'
+            print debug_str.format(T, it, wrw)
+
+        # Procedure usually ends here
+        if T <= 0:
+            debug_str = 'T: {0}, Iteration: {1}, Score: {2}'
+            print debug_str.format(T, it, wrw)
+            return scores
+
+        # Take random trip
+        trip = random.randrange(0,len(Trips))
+        if len(Trips[trip]) == 1 or len(Trips[trip]) == 0 :
+            continue
+        #take random place in the trip
+        place = random.randrange(0,len(Trips[trip]))
+        # Check if it is beneficial to take the second gift
+        # on the trip carrying the first one ???
+        dif = check_if_split(trip,Trips,place,GiftList)
+        
+        if dif < 0:
+                #print 'negative, merging'
+            update_after_split(trip,Trips,place,GiftList)
+            split_trips(trip,Trips,place)
+            wrw += dif
+            t_minus += dif
+                #print Tri
+        else:
+            r = random.random()
+            #print 'Boltzmann:', prob(dif,T),'random number:', r
+            if prob(dif, T) > r:
+                update_after_split(trip,Trips,place,GiftList)
+                split_trips(trip,Trips,place)
+                wrw += dif
+                t_minus += dif
+                    #print 'merging'
+
+                    #print Trip
+
+    # I don't know what those are representing
+    # but I trye to print them anyway
+    print 't+: {0}, t-:{1}'.format(t_plus, t_minus)
+
+    return scores
+
+
 if __name__ == "__main__":
 
-    GiftList = read_data('data/gifts.csv')[0:1000]
+
+    GiftList = read_data('data/gifts.csv')[0:10000]
     Trips = init_trips(GiftList)
     Masses=init_masses(Trips)
     #r = avarage_difference(GiftList,Trips,10000)
 
     before = total_WRW(Trips, GiftList)
 
-    iterations = int(2e4)
+    iterations = 2
     results = optimize1(15000.0, iterations, GiftList, Trips,Masses)
     after = results[-1]
 
@@ -302,4 +422,35 @@ if __name__ == "__main__":
     print 'Avarage trip length:', float(s)/float(n)
 
     write_solution(GiftList, Trips, 'local_solution.csv')
+   
+    iterations1=100
+    GiftList = read_data('data/gifts.csv')[0:10000]
+    Trips = init_trips1(GiftList)
+    
+    before = total_WRW(Trips, GiftList)
+
+    iterations = int(4e4)
+    results = optimize2(15000.0, iterations, GiftList, Trips,Masses)
+    after = results[-1]
+    plt.plot(results)
+    plt.show()
+
+    print 'Initial WRW', before
+    print 'After optimization', after
+    
+    s = 0
+    n = 0
+
+    for it in Trips:
+        s += len(it)
+        if len(it) is not 0:
+            n += 1
+
+    print 'Avarage trip length:', float(s)/float(n)
+    
+
+    
+    
+    
+    
 
