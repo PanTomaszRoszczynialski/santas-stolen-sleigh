@@ -47,18 +47,20 @@ def init_trips(GiftList):
     Trips = []
     for it in range(len(GiftList)):
         Trips.append([it])
+
+        # WTF are those for
         GiftList[it].append(it)
         GiftList[it].append(0)
+
     return Trips
 
-def trip_wrw(trip, Trips, GiftList):
-  #  print trip
-    route = Trips[trip]
-    if len(route) is 0:
+def trip_wrw(trip, GiftList):
+    """ trip is a list of gifts to be delivered in one session """
+    if len(trip) is 0:
         return 0
 
-    places = [(GiftList[x][0], GiftList[x][1]) for x in route]
-    weights = [GiftList[x][2] for x in Trips[trip]]
+    places = [(GiftList[x][0], GiftList[x][1]) for x in trip]
+    weights = [GiftList[x][2] for x in trip]
     total_mass = sum(weights)+sleigh_mass
 
     tot = total_mass * distance(places[0])
@@ -67,55 +69,59 @@ def trip_wrw(trip, Trips, GiftList):
         tot += total_mass * distance(places[it], places[it+1])
 
     # Get back to the pole, bitch
-    tot += sleigh_mass * distance(places[len(places)-1])
+    tot += sleigh_mass * distance(places[-1])
+
     return tot
 
 def initalize_wrws(Trips, GiftList):
     wrws = []
-    for it in range(len(Trips)):
-        wrws.append(trip_wrw(it, Trips, GiftList))
+    for trip in Trips:
+        wrws.append(trip_wrw(trip, GiftList))
 
     return wrws
 
 def total_WRW(Trips, GiftList):
     s = 0
-    for it in range(len(Trips)):
-        s += trip_wrw(it, Trips, GiftList)
+    for trip in Trips:
+        s += trip_wrw(trip, GiftList)
+
     return s
 
 def merge_trips(trip1, trip2, Trips):
-    Trips[trip1]+=Trips[trip2]
-    Trips[trip2]=list()
+    Trips[trip1] += Trips[trip2]
+    Trips[trip2] = list()
 
 def update_after_merge(trip1, trip2, GiftList):
-    if trip1==trip2:
+    if trip1 == trip2:
         raise Exception(0)
-    s=len(Trips[trip1])
+
+    s = len(Trips[trip1])
 
     for it in Trips[trip2]:
-        GiftList[it][3]=trip1
-        GiftList[it][4]=s
-        s+=1
+        GiftList[it][3] = trip1
+        GiftList[it][4] = s
+        s += 1
 
 def check_if_merge(trip1, trip2, Trips, GiftList):
     """ This function seems to be important """
+    # worst line ever
     l = list([list(Trips[trip1]), list(Trips[trip2])])
-    l_c = list(l)
-    Ei = trip_wrw(0, l, GiftList) +\
-         trip_wrw(1, l, GiftList)
+    Ei = trip_wrw(l[0], GiftList) +\
+         trip_wrw(l[1], GiftList)
     #print l
     merge_trips(0, 1, l)
     # XXX Karny kutas za jezykowy promiskuityzm
     #print 'Jestem w checku',l
-    Ef = trip_wrw(0, l, GiftList)
+    Ef = trip_wrw(l[0], GiftList)
 
     return Ef - Ei
 
 def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
+    """ Used only in unused function """
     route = Trips[trip]
     #if trip!=GiftList[new_route[0]][3]:
     #    raise Exception(0)
-    if len(new_route)!=len(route) :
+    if len(new_route) is not len(route) :
         raise Exception(0)
     route = new_route
 
@@ -125,18 +131,19 @@ def update_after_permutation(new_route, GiftList, Trips):
 
 def check_if_permute(new_route, GiftList, trip, Trips):
     """ Unused """
-    l=[list(Trips[trip])]
-    E_i = trip_wrw(trip,Trips,GiftList)
-    permute_gifts_in_trip(new_route,GiftList,0,l)
-    E_f = trip_wrw(0,l,GiftList)
+    l = [list(Trips[trip])]
+    E_i = trip_wrw(Trips[trip], GiftList)
+    permute_gifts_in_trip(new_route, GiftList, 0, l)
+    E_f = trip_wrw(l[0], GiftList)
 
     return E_f-E_i
 
 def avarage_difference(GiftList, Trips, samples):
-    s_plus=0
-    s_minus=0
-    c_minus=0
-    c_plus=0
+    """ Unused """
+    s_plus  = 0
+    s_minus = 0
+    c_minus = 0
+    c_plus  = 0
     N = len(GiftList)
 
     for it in range(samples):
@@ -154,7 +161,9 @@ def avarage_difference(GiftList, Trips, samples):
         else :
             c_plus+=1
             s_plus+=dif
-    result = [c_minus,c_plus,s_plus/N]
+
+    result = [c_minus, c_plus, s_plus/N]
+
     return result
 
 def optimize1(T_start, iterations,
@@ -166,17 +175,18 @@ def optimize1(T_start, iterations,
     epsilon = (T_start + 100.0)/float(iterations)
     T = T_start + epsilon
     N = len(GiftList)
+
     for it in range(iterations):
+        # Print debug information every 1000 steps
+        if it%1000 is 0:
+            print 'Temperature: {0} on iteration: {1}'.format(T, it)
+
         T -= epsilon
         if T <= 0 :
             return wrw
 
-        # Print debug information every 1000 steps
-        if it%1000 is 0:
-            print 'Temperature:', T
-
-        id1 = random.randrange(0,N)
-        id2 = random.randrange(0,N)
+        id1 = random.randrange(0, N)
+        id2 = random.randrange(0, N)
         gift1 = GiftList[id1]
         gift2 = GiftList[id2]
         trip1, trip2 = gift1[3], gift2[3]
@@ -184,7 +194,7 @@ def optimize1(T_start, iterations,
             continue
 
         #print 'Trips',trip1,trip2,'chosen.'
-        dif = check_if_merge(trip1,trip2,Trips,GiftList)
+        dif = check_if_merge(trip1, trip2, Trips, GiftList)
         #print  'Their difference: ',dif
         if dif < 0 :
             if len(Trips[trip1])+len(Trips[trip2])>=0.0 :
@@ -216,9 +226,11 @@ if __name__ == "__main__":
 
     before = total_WRW(Trips, GiftList)
 
-    opt = optimize1(15000.0,100000,GiftList,Trips)
+    iterations = int(1e5)
+    after = optimize1(15000.0, iterations, GiftList, Trips)
+
     print 'Initial WRW', before
-    print 'After optimization', opt
+    print 'After optimization', after
 
     s = 0
     n = 0
@@ -231,3 +243,4 @@ if __name__ == "__main__":
     print 'Avarage trip length:', float(s)/float(n)
 
     write_solution(GiftList, Trips, 'local_solution.csv')
+
