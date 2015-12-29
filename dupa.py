@@ -88,6 +88,7 @@ def total_WRW(Trips, GiftList):
     return s
 
 def merge_trips(trip1, trip2, Trips):
+    """ dafuq """
     Trips[trip1] += Trips[trip2]
     Trips[trip2] = list()
 
@@ -106,6 +107,7 @@ def check_if_merge(trip1, trip2, Trips, GiftList):
     """ This function seems to be important """
     # worst line ever
     l = list([list(Trips[trip1]), list(Trips[trip2])])
+
     Ei = trip_wrw(l[0], GiftList) +\
          trip_wrw(l[1], GiftList)
     #print l
@@ -153,12 +155,14 @@ def avarage_difference(GiftList, Trips, samples):
             continue
         trip1 = GiftList[id1][3]
         trip2 = GiftList[id2][3]
-        if trip1==trip2:
+        if trip1 == trip2:
             continue
-        dif = check_if_merge(trip1,trip2,Trips,GiftList)
+
+        dif = check_if_merge(trip1, trip2, Trips, GiftList)
+
         if dif <= 0 :
             c_minus-=1
-        else :
+        else:
             c_plus+=1
             s_plus+=dif
 
@@ -169,54 +173,74 @@ def avarage_difference(GiftList, Trips, samples):
 def optimize1(T_start, iterations,
               GiftList, Trips,
               prob = boltzmann_distribution):
+
+    # What are those t_ for?
     t_plus  = 0
     t_minus = 0
+
     wrw = total_WRW(Trips, GiftList)
     epsilon = (T_start + 100.0)/float(iterations)
     T = T_start + epsilon
     N = len(GiftList)
 
+    # Keep track of improvements for diagnostics
+    scores = []
+
     for it in range(iterations):
+        # Take temperature step
+        T -= epsilon
+
+        # Save current score
+        scores.append(wrw)
+
         # Print debug information every 1000 steps
         if it%1000 is 0:
-            print 'Temperature: {0} on iteration: {1}'.format(T, it)
+            debug_str = 'T: {0}, Iteration: {1}, Score: {2}'
+            print debug_str.format(T, it, wrw)
 
-        T -= epsilon
-        if T <= 0 :
-            return wrw
+        # Procedure usually ends here
+        if T <= 0:
+            debug_str = 'T: {0}, Iteration: {1}, Score: {2}'
+            print debug_str.format(T, it, wrw)
+            return scores
 
         id1 = random.randrange(0, N)
         id2 = random.randrange(0, N)
         gift1 = GiftList[id1]
         gift2 = GiftList[id2]
         trip1, trip2 = gift1[3], gift2[3]
+
         if trip1 == trip2:
             continue
 
         #print 'Trips',trip1,trip2,'chosen.'
         dif = check_if_merge(trip1, trip2, Trips, GiftList)
         #print  'Their difference: ',dif
-        if dif < 0 :
-            if len(Trips[trip1])+len(Trips[trip2])>=0.0 :
+        if dif < 0:
+            if len(Trips[trip1]) + len(Trips[trip2]) >= 0.0:
                 #print 'negative, merging'
                 update_after_merge(trip1, trip2, GiftList)
                 merge_trips(trip1, trip2, Trips)
                 wrw += dif
                 t_minus += dif
                 #print Trips
-
-        else :
+        else:
             r = random.random()
             #print 'Boltzmann:', prob(dif,T),'random number:', r
-            if prob(dif,T) > r:
+            if prob(dif, T) > r:
                 if len(Trips[trip1]) + len(Trips[trip2]) >= 0.0:
                     #print 'merging'
-                    update_after_merge(trip1,trip2,GiftList)
-                    merge_trips(trip1,trip2,Trips)
-                    wrw+=dif
-                    t_plus+=dif
+                    update_after_merge(trip1, trip2, GiftList)
+                    merge_trips(trip1, trip2, Trips)
+                    wrw += dif
+                    t_plus += dif
                     #print Trip
-    return wrw
+
+    # I don't know what those are representing
+    # but I trye to print them anyway
+    print 't+: {0}, t-:{1}'.format(t_plus, t_minus)
+
+    return scores
 
 if __name__ == "__main__":
 
@@ -227,11 +251,16 @@ if __name__ == "__main__":
     before = total_WRW(Trips, GiftList)
 
     iterations = int(1e5)
-    after = optimize1(15000.0, iterations, GiftList, Trips)
+    results = optimize1(15000.0, iterations, GiftList, Trips)
+    after = results[-1]
 
     print 'Initial WRW', before
     print 'After optimization', after
 
+    plt.plot(results)
+    plt.show()
+
+    # This seems to be bullshit
     s = 0
     n = 0
 
