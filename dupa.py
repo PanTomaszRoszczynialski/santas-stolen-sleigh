@@ -145,9 +145,11 @@ def permute_gifts_in_trip(new_route, GiftList, trip, Trips):
         raise Exception(0)
     route = new_route
 
-def update_after_permutation(new_route, GiftList, Trips):
+def update_after_permutation(new_route, GiftList, trip, Trips):
     """ Unused """
-    pass
+    for it in range(len(new_route)):
+        GiftList[new_route[it]][4]=it
+        
 
 def check_if_permute(new_route, GiftList, trip, Trips):
     """ Unused """
@@ -278,7 +280,7 @@ if __name__ == "__main__":
 
     before = total_WRW(Trips, GiftList)
 
-    iterations = int(1e5)
+    iterations = int(2e4)
     results = optimize1(15000.0, iterations, GiftList, Trips,Masses)
     after = results[-1]
 
