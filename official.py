@@ -33,23 +33,11 @@ def weighted_reindeer_weariness(all_trips):
     dist = 0.0
     for t in uniq_trips:
         this_trip = all_trips[all_trips.TripId==t]
-        dist = dist + weighted_trip_length(this_trip[['Latitude','Longitude']], this_trip.Weight.tolist())
+        dist = dist +\
+               weighted_trip_length(this_trip[['Latitude','Longitude']],
+                                           this_trip.Weight.tolist())
 
     return dist
-
-def weighted_reindeer_weariness(all_trips):
-    uniq_trips = all_trips.TripId.unique()
-
-    if any(all_trips.groupby('TripId').Weight.sum() > weight_limit):
-        raise Exception("One of the sleighs over weight limit!")
-
-    dist = 0.0
-    for t in uniq_trips:
-        this_trip = all_trips[all_trips.TripId==t]
-        dist = dist + weighted_trip_length(this_trip[['Latitude','Longitude']], this_trip.Weight.tolist())
-
-    return dist
-
 
 
 gifts = pd.read_csv('data/gifts.csv')

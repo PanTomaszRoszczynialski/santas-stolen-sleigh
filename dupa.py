@@ -47,8 +47,10 @@ def init_trips(GiftList):
     for it in range(len(GiftList)):
         Trips.append([it])
 
-        # WTF are those for
+        # Trip id (initially every gift is in separate trip)
         GiftList[it].append(it)
+
+        # 0-based position in trip's queue
         GiftList[it].append(0)
 
     return Trips
