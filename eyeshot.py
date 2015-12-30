@@ -40,7 +40,7 @@ for n in [1.11]:
         for j in range(180,-180,int(-360/n)):
             j_ += 1
             #cu = c.cursor()
-            gifts.loc[(gifts['Latitude']>(i-180/n))&(gifts['Latitude']<i)&(gifts['Longitude']>(j-360/n))&(gifts['Longitude']<(j)),"i"]=i_
+            gifts.loc[(gifts['Latitude'] > (i-180/n)) & (gifts['Latitude']<i) & (gifts['Longitude'] > (j-360/n)) & (gifts['Longitude']<(j)),"i"]=i_
             gifts.loc[(gifts['Latitude']>(i-180/n))&(gifts['Latitude']<i)&(gifts['Longitude']>(j-360/n))&(gifts['Longitude']<(j)),"j"]=j_
 
     
