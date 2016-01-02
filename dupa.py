@@ -54,36 +54,35 @@ def init_trips(GiftList):
         GiftList[it].append(0)
 
     return Trips
-    
+
 #List of total trip masses can be useful in future     
 def init_trips1(GiftList):
-    N=len(GiftList)
+    N = len(GiftList)
     l = list(np.random.permutation(N))
     result = []
-    trip=0
+    trip = 0
     mass = 0
     result.append([])
     for it in l:
         #print mass, result
         mass += GiftList[it][2]
-        if mass <=1000 :
+        if mass <= 1000:
             result[trip].append(it)
             GiftList[it].append(trip)
-        else :
+        else:
             trip += 1
             mass = 0
             result.append([])
             result[trip].append(it)
             GiftList[it].append(trip)
-        
-    
+
     return result
-    
+
 def init_masses(Trips):
-    Masses=[]
+    Masses = []
     for it in range(len(Trips)):
         Masses.append(GiftList[it][2])
-    
+
     return Masses
 
 def trip_wrw(trip, GiftList):
@@ -136,7 +135,7 @@ def update_after_merge(trip1, trip2, GiftList,Masses):
         GiftList[it][3] = trip1
         GiftList[it][4] = s
         s += 1
-    
+
     Masses[trip1] += Masses[trip2]
     Masses[trip2] = 0
 
@@ -159,21 +158,20 @@ def check_if_merge(trip1, trip2, Trips, GiftList):
     Ef = trip_wrw(local_trips[0], GiftList)
 
     return Ef - Ei
-    
-    
+
 def split_trips(trip,Trips,place):
     #place = GiftList[gift][4]
     Trips.append(Trips[trip][place:])
     Trips[trip] = Trips[trip][:place]
 
 def check_if_split(trip, Trips, place, GiftList) :
-    E_i = trip_wrw(Trips[trip],GiftList)
-    
-    E_f = trip_wrw(Trips[trip][:place],GiftList) +trip_wrw(Trips[trip][place:],GiftList) 
-          
-    
+    E_i = trip_wrw(Trips[trip], GiftList)
+
+    E_f = trip_wrw(Trips[trip][:place], GiftList) +\
+          trip_wrw(Trips[trip][place:], GiftList)
+
     return E_f-E_i
-    
+
 def update_after_split(trip,Trips,place,GiftList):
     for it in Trips[trip][place:]:
         GiftList[it][3] = len(Trips)
@@ -194,7 +192,6 @@ def update_after_permutation(new_route, GiftList, trip, Trips):
     """ Unused """
     for it in range(len(new_route)):
         GiftList[new_route[it]][4]=it
-        
 
 def check_if_permute(new_route, GiftList, trip, Trips):
     """ Unused """
@@ -248,8 +245,7 @@ def optimize1(T_start, iterations,
     #przepraszam za jezykowy "promiskuityzm" ale do JASNEJ KURWY czemu 
     #temperatura dochodzi ponizej zera przy takiej  inicjalizacji??????
     #Nie ogarniam    
-    
-    
+
     T = T_start + epsilon
     N = len(GiftList)
 
@@ -287,8 +283,6 @@ def optimize1(T_start, iterations,
         # Check if it is beneficial to take the second gift
         # on the trip carrying the first one ???
         dif = check_if_merge(trip1, trip2, Trips, GiftList)
-        
-        
 
         if dif < 0:
             if Masses[trip1] + Masses[trip2] <= 1000:
@@ -329,8 +323,7 @@ def optimize2(T_start, iterations,
     #przepraszam za jezykowy "promiskuityzm" ale do JASNEJ KURWY czemu 
     #temperatura dochodzi ponizej zera przy takiej  inicjalizacji??????
     #Nie ogarniam    
-    
-    
+
     T = T_start + epsilon
     N = len(GiftList)
     N_T = len(Trips)
@@ -378,7 +371,7 @@ def optimize2(T_start, iterations,
             #print 'Boltzmann:', prob(dif,T),'random number:', r
             if prob(dif, T) > r:
                 update_after_split(trip,Trips,place,GiftList)
-                split_trips(trip,Trips,place)
+                split_trips(trip, Trips, place)
                 wrw += dif
                 t_minus += dif
                     #print 'merging'
