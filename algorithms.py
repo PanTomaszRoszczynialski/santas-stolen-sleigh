@@ -41,7 +41,7 @@ def gift_phi(gid):
 
 def gift_position(gid):
     """ Returns gift coordinates as accepted by the distance method """
-    return gift_theta(gid), gift_phi(gid)
+    return gift_phi(gid), gift_theta(gid)
 
 def show_gifts_info(gifts):
     """ Pandas usability showcase """
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         # Find all gifts on that longitude (with deviation sigma)
         sigma = 0.05
         close = find_on_meridian(not_delivered, long, sigma=sigma)
-        close = close.sort_values(_PH)
+        close = close.sort_values(_PH, ascending=False)
 
         # Take as many gifts on that linear trip as possible
         while sum(close.Weight) > weight_limit:
@@ -174,6 +174,9 @@ if __name__ == '__main__':
 
         # Mark those gifts as delivered
         not_delivered = not_delivered.drop(close.index)
+
+        if len(trips) > 1e4:
+            break
 
     total = 0
     for trip in trips:
